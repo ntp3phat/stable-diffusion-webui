@@ -75,10 +75,7 @@ def is_sampler_using_eta_noise_seed_delta(p):
     if eta is None and sampler_config is not None:
         eta = 0 if sampler_config.options.get("default_eta_is_0", False) else 1.0
 
-    if eta == 0:
-        return False
-
-    return sampler_config.options.get("uses_ensd", False)
+    return False if eta == 0 else sampler_config.options.get("uses_ensd", False)
 
 
 class InterruptedException(BaseException):

@@ -44,7 +44,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, queue_loc
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
-    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
+    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__)[0]
 
 from modules import shared, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
 import modules.codeformer_model as codeformer
@@ -134,10 +134,10 @@ there are reports of issues with training tab on the latest version.
 Use --skip-version-check commandline argument to disable this check.
         """.strip())
 
-    expected_xformers_version = "0.0.17"
     if shared.xformers_available:
         import xformers
 
+        expected_xformers_version = "0.0.17"
         if version.parse(xformers.__version__) < version.parse(expected_xformers_version):
             errors.print_error_explanation(f"""
 You are running xformers {xformers.__version__}.
@@ -190,9 +190,7 @@ def get_gradio_auth_creds() -> Iterable[tuple[str, ...]]:
     """
     def process_credential_line(s) -> tuple[str, ...] | None:
         s = s.strip()
-        if not s:
-            return None
-        return tuple(s.split(':', 1))
+        return None if not s else tuple(s.split(':', 1))
 
     if cmd_opts.gradio_auth:
         for cred in cmd_opts.gradio_auth.split(','):
@@ -202,7 +200,7 @@ def get_gradio_auth_creds() -> Iterable[tuple[str, ...]]:
 
     if cmd_opts.gradio_auth_path:
         with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
-            for line in file.readlines():
+            for line in file:
                 for cred in line.strip().split(','):
                     cred = process_credential_line(cred)
                     if cred:

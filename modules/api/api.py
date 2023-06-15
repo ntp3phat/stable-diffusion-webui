@@ -64,8 +64,7 @@ def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
-        image = Image.open(BytesIO(base64.b64decode(encoding)))
-        return image
+        return Image.open(BytesIO(base64.b64decode(encoding)))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
@@ -254,8 +253,7 @@ class Api:
         #find max idx from the scripts in runner and generate a none array to init script_args
         last_arg_index = 1
         for script in script_runner.scripts:
-            if last_arg_index < script.args_to:
-                last_arg_index = script.args_to
+            last_arg_index = max(last_arg_index, script.args_to)
         # None everywhere except position 0 to initialize script args
         script_args = [None]*last_arg_index
         script_args[0] = 0
@@ -264,9 +262,7 @@ class Api:
         with gr.Blocks(): # will throw errors calling ui function without this
             for script in script_runner.scripts:
                 if script.ui(script.is_img2img):
-                    ui_default_values = []
-                    for elem in script.ui(script.is_img2img):
-                        ui_default_values.append(elem.value)
+                    ui_default_values = [elem.value for elem in script.ui(script.is_img2img)]
                     script_args[script.args_from:script.args_to] = ui_default_values
         return script_args
 
@@ -506,10 +502,12 @@ class Api:
         options = {}
         for key in shared.opts.data.keys():
             metadata = shared.opts.data_labels.get(key)
-            if(metadata is not None):
-                options.update({key: shared.opts.data.get(key, shared.opts.data_labels.get(key).default)})
+            if (metadata is not None):
+                options[key] = shared.opts.data.get(
+                    key, shared.opts.data_labels.get(key).default
+                )
             else:
-                options.update({key: shared.opts.data.get(key, None)})
+                options[key] = shared.opts.data.get(key, None)
 
         return options
 

@@ -74,9 +74,11 @@ class CFGDenoiser(torch.nn.Module):
 
     def combine_denoised_for_edit_model(self, x_out, cond_scale):
         out_cond, out_img_cond, out_uncond = x_out.chunk(3)
-        denoised = out_uncond + cond_scale * (out_cond - out_img_cond) + self.image_cfg_scale * (out_img_cond - out_uncond)
-
-        return denoised
+        return (
+            out_uncond
+            + cond_scale * (out_cond - out_img_cond)
+            + self.image_cfg_scale * (out_img_cond - out_uncond)
+        )
 
     def forward(self, x, sigma, uncond, cond, cond_scale, s_min_uncond, image_cond):
         if state.interrupted or state.skipped:
@@ -271,11 +273,12 @@ class KDiffusionSampler:
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
 
-        extra_params_kwargs = {}
-        for param_name in self.extra_params:
-            if hasattr(p, param_name) and param_name in inspect.signature(self.func).parameters:
-                extra_params_kwargs[param_name] = getattr(p, param_name)
-
+        extra_params_kwargs = {
+            param_name: getattr(p, param_name)
+            for param_name in self.extra_params
+            if hasattr(p, param_name)
+            and param_name in inspect.signature(self.func).parameters
+        }
         if 'eta' in inspect.signature(self.func).parameters:
             if self.eta != 1.0:
                 p.extra_generation_params["Eta"] = self.eta
@@ -353,9 +356,17 @@ class KDiffusionSampler:
             's_min_uncond': self.s_min_uncond
         }
 
-        samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
-
-        return samples
+        return self.launch_sampling(
+            t_enc + 1,
+            lambda: self.func(
+                self.model_wrap_cfg,
+                xi,
+                extra_args=extra_args,
+                disable=False,
+                callback=self.callback_state,
+                **extra_params_kwargs
+            ),
+        )
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps = steps or p.steps
@@ -380,13 +391,21 @@ class KDiffusionSampler:
             extra_params_kwargs['noise_sampler'] = noise_sampler
 
         self.last_latent = x
-        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
-            'cond': conditioning,
-            'image_cond': image_conditioning,
-            'uncond': unconditional_conditioning,
-            'cond_scale': p.cfg_scale,
-            's_min_uncond': self.s_min_uncond
-        }, disable=False, callback=self.callback_state, **extra_params_kwargs))
-
-        return samples
+        return self.launch_sampling(
+            steps,
+            lambda: self.func(
+                self.model_wrap_cfg,
+                x,
+                extra_args={
+                    'cond': conditioning,
+                    'image_cond': image_conditioning,
+                    'uncond': unconditional_conditioning,
+                    'cond_scale': p.cfg_scale,
+                    's_min_uncond': self.s_min_uncond,
+                },
+                disable=False,
+                callback=self.callback_state,
+                **extra_params_kwargs
+            ),
+        )
 

@@ -83,11 +83,11 @@ def restore_config_state(confirmed, config_state_name, restore_type):
 
     print(f"*** Restoring webui state from backup: {restore_type} ***")
 
-    if restore_type == "extensions" or restore_type == "both":
+    if restore_type in ["extensions", "both"]:
         shared.opts.restore_config_state_file = config_state["filepath"]
         shared.opts.save(shared.config_filename)
 
-    if restore_type == "webui" or restore_type == "both":
+    if restore_type in ["webui", "both"]:
         config_states.restore_webui_config(config_state)
 
     shared.state.request_restart()
@@ -127,7 +127,7 @@ def make_commit_link(commit_hash, remote, text=None):
     if remote.startswith("https://github.com/"):
         if remote.endswith(".git"):
             remote = remote[:-4]
-        href = remote + "/commit/" + commit_hash
+        href = f"{remote}/commit/{commit_hash}"
         return f'<a href="{href}" target="_blank">{text}</a>'
     else:
         return text
@@ -337,7 +337,11 @@ def install_extension_from_url(dirname, url, branch_name=None):
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
-    assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
+    assert not [
+        x
+        for x in extensions.extensions
+        if normalize_git_url(x.remote) == normalized_url
+    ], 'Extension with this URL is already installed'
 
     tmpdir = os.path.join(paths.data_path, "tmp", dirname)
 
@@ -453,7 +457,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         existing = installed_extension_urls.get(normalize_git_url(url), None)
         extension_tags = extension_tags + ["installed"] if existing else extension_tags
 
-        if len([x for x in extension_tags if x in tags_to_hide]) > 0:
+        if [x for x in extension_tags if x in tags_to_hide]:
             hidden += 1
             continue
 
