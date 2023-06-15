@@ -15,12 +15,11 @@ samplers_map = {}
 
 
 def find_sampler_config(name):
-    if name is not None:
-        config = all_samplers_map.get(name, None)
-    else:
-        config = all_samplers[0]
-
-    return config
+    return (
+        all_samplers_map.get(name, None)
+        if name is not None
+        else all_samplers[0]
+    )
 
 
 def create_sampler(name, model):

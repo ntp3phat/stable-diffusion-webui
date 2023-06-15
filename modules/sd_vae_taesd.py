@@ -62,12 +62,12 @@ class TAESD(nn.Module):
 
 
 def download_model(model_path):
-    model_url = 'https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth'
-
     if not os.path.exists(model_path):
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
 
         print(f'Downloading TAESD decoder to: {model_path}')
+        model_url = 'https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth'
+
         torch.hub.download_url_to_file(model_url, model_path)
 
 

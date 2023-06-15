@@ -44,7 +44,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 if full_path not in output:
                     output.append(full_path)
 
-        if model_url is not None and len(output) == 0:
+        if model_url is not None and not output:
             if download_name is not None:
                 from basicsr.utils.download_util import load_file_from_url
                 dl = load_file_from_url(model_url, places[0], True, download_name)

@@ -38,8 +38,7 @@ opt_f = 8
 
 def setup_color_correction(image):
     logging.info("Calibrating color correction.")
-    correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
-    return correction_target
+    return cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
 
 
 def apply_color_correction(correction, original_image):
@@ -209,9 +208,7 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
-        conditioning_image = self.sd_model.encode_first_stage(source_image).mode()
-
-        return conditioning_image
+        return self.sd_model.encode_first_stage(source_image).mode()
 
     def unclip_image_conditioning(self, source_image):
         c_adm = self.sd_model.embedder(source_image)
@@ -225,19 +222,18 @@ class StableDiffusionProcessing:
         self.is_using_inpainting_conditioning = True
 
         # Handle the different mask inputs
-        if image_mask is not None:
-            if torch.is_tensor(image_mask):
-                conditioning_mask = image_mask
-            else:
-                conditioning_mask = np.array(image_mask.convert("L"))
-                conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
-                conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
-
-                # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
-                conditioning_mask = torch.round(conditioning_mask)
-        else:
+        if image_mask is None:
             conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
 
+        elif torch.is_tensor(image_mask):
+            conditioning_mask = image_mask
+        else:
+            conditioning_mask = np.array(image_mask.convert("L"))
+            conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
+            conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
+
+            # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
+            conditioning_mask = torch.round(conditioning_mask)
         # Create another latent image, this time with a masked version of the original input.
         # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
         conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
@@ -446,8 +442,9 @@ def slerp(val, low, high):
 
     omega = torch.acos(dot)
     so = torch.sin(omega)
-    res = (torch.sin((1.0-val)*omega)/so).unsqueeze(1)*low + (torch.sin(val*omega)/so).unsqueeze(1) * high
-    return res
+    return (torch.sin((1.0 - val) * omega) / so).unsqueeze(1) * low + (
+        torch.sin(val * omega) / so
+    ).unsqueeze(1) * high
 
 
 def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):

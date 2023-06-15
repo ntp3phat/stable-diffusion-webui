@@ -15,12 +15,12 @@ from modules.shared import opts
 def mod2normal(state_dict):
     # this code is copied from https://github.com/victorca25/iNNfer
     if 'conv_first.weight' in state_dict:
-        crt_net = {}
         items = list(state_dict)
 
-        crt_net['model.0.weight'] = state_dict['conv_first.weight']
-        crt_net['model.0.bias'] = state_dict['conv_first.bias']
-
+        crt_net = {
+            'model.0.weight': state_dict['conv_first.weight'],
+            'model.0.bias': state_dict['conv_first.bias'],
+        }
         for k in items.copy():
             if 'RDB' in k:
                 ori_k = k.replace('RRDB_trunk.', 'model.1.sub.')
@@ -49,12 +49,12 @@ def resrgan2normal(state_dict, nb=23):
     # this code is copied from https://github.com/victorca25/iNNfer
     if "conv_first.weight" in state_dict and "body.0.rdb1.conv1.weight" in state_dict:
         re8x = 0
-        crt_net = {}
         items = list(state_dict)
 
-        crt_net['model.0.weight'] = state_dict['conv_first.weight']
-        crt_net['model.0.bias'] = state_dict['conv_first.bias']
-
+        crt_net = {
+            'model.0.weight': state_dict['conv_first.weight'],
+            'model.0.bias': state_dict['conv_first.bias'],
+        }
         for k in items.copy():
             if "rdb" in k:
                 ori_k = k.replace('body.', 'model.1.sub.')
@@ -129,16 +129,12 @@ class UpscalerESRGAN(Upscaler):
         self.user_path = dirname
         super().__init__()
         model_paths = self.find_models(ext_filter=[".pt", ".pth"])
-        scalers = []
         if len(model_paths) == 0:
             scaler_data = UpscalerData(self.model_name, self.model_url, self, 4)
+            scalers = []
             scalers.append(scaler_data)
         for file in model_paths:
-            if "http" in file:
-                name = self.model_name
-            else:
-                name = modelloader.friendly_name(file)
-
+            name = self.model_name if "http" in file else modelloader.friendly_name(file)
             scaler_data = UpscalerData(name, file, self, 4)
             self.scalers.append(scaler_data)
 

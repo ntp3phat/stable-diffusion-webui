@@ -124,10 +124,10 @@ class PersonalizedBase(Dataset):
             else:
                 entry = DatasetEntry(filename=path, filename_text=filename_text, latent_sample=latent_sample, weight=weight)
 
-            if not (self.tag_drop_out != 0 or self.shuffle_tags):
+            if self.tag_drop_out == 0 and not self.shuffle_tags:
                 entry.cond_text = self.create_text(filename_text)
 
-            if include_cond and not (self.tag_drop_out != 0 or self.shuffle_tags):
+            if include_cond and self.tag_drop_out == 0 and not self.shuffle_tags:
                 with devices.autocast():
                     entry.cond = cond_model([entry.cond_text]).to(devices.cpu).squeeze(0)
             groups[image.size].append(len(self.dataset))

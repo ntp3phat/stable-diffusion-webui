@@ -196,9 +196,16 @@ class VanillaStableDiffusionSampler:
                 conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
                 unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
 
-        samples = self.launch_sampling(t_enc + 1, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
-
-        return samples
+        return self.launch_sampling(
+            t_enc + 1,
+            lambda: self.sampler.decode(
+                x1,
+                conditioning,
+                t_enc,
+                unconditional_guidance_scale=p.cfg_scale,
+                unconditional_conditioning=unconditional_conditioning,
+            ),
+        )
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         self.initialize(p)
@@ -219,6 +226,17 @@ class VanillaStableDiffusionSampler:
                 conditioning = {"dummy_for_plms": np.zeros((conditioning.shape[0],)), "c_crossattn": [conditioning], "c_concat": [image_conditioning]}
                 unconditional_conditioning = {"c_crossattn": [unconditional_conditioning], "c_concat": [image_conditioning]}
 
-        samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
-
-        return samples_ddim
+        return self.launch_sampling(
+            steps,
+            lambda: self.sampler.sample(
+                S=steps,
+                conditioning=conditioning,
+                batch_size=int(x.shape[0]),
+                shape=x[0].shape,
+                verbose=False,
+                unconditional_guidance_scale=p.cfg_scale,
+                unconditional_conditioning=unconditional_conditioning,
+                x_T=x,
+                eta=self.eta,
+            )[0],
+        )
